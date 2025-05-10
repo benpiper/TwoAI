@@ -1,6 +1,18 @@
+""" twoai.py """
+import datetime
+import sys
+import logging
 from colorama import Fore, Style
 from ollama import Client
 from . import AgentDetails, Agent, DEFAULT_HOST
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler(sys.stdout)],
+)
+
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 class TWOAI:
     """
@@ -18,13 +30,13 @@ class TWOAI:
     def __init__(
             self, 
             model: str, 
-            agent_details: AgentDetails, 
+            agent_details: AgentDetails,
             system_prompt: str, 
             max_tokens: int=4094, 
             num_context: int=4094, 
             extra_stops: list[str] = [],
             exit_word: str = "<DONE!>",
-            temperature: int = 0.7,
+            temperature: int = 0.8,
             max_exit_words: int = 2
         ) -> None:
         self.agent_details = agent_details
@@ -41,9 +53,12 @@ class TWOAI:
         self.exit_word = exit_word
         self.exit_word_count = 0
         self.max_exit_words = max_exit_words
+        logging.info(model)
+        logging.info(agent_details)
 
     def bot_say(self, msg: str, color: str = Fore.LIGHTGREEN_EX):
-        print(color + msg.strip() + "\t\t" + Style.RESET_ALL )
+        #print(color + msg.strip() + "\t\t" + Style.RESET_ALL )
+        logging.info(color + msg.strip())
 
     def get_opposite_ai(self) -> Agent:
         if self.current_agent['name'] == self.agent_details[0]['name']:
@@ -88,6 +103,7 @@ class TWOAI:
         if show_output:
             self.__hide_cursor()
             print(Fore.YELLOW + f"{self.current_agent['name']} is thinking..." + Style.RESET_ALL, end='\r')
+            logging.info("%s is thinking...", self.current_agent['name'])
         
         ollama = Client(host=current_host)
         resp = ollama.generate(
@@ -112,10 +128,12 @@ class TWOAI:
                 ] + self.extra_stops
             }
         )
+        logging.debug(resp)
 
         text: str = resp['response'].strip()
         if not text:
-            print(Fore.RED + f"Error: {self.current_agent['name']} made an empty response, trying again." + Style.RESET_ALL)
+            #print(Fore.RED + f"Error: {self.current_agent['name']} made an empty response, trying again." + Style.RESET_ALL)
+            logging.warning("%s made an empty response, trying again.", self.current_agent['name'])
             return self.next_response(show_output)
 
         if not text.startswith(self.current_agent['name'] + ": "):
@@ -139,11 +157,14 @@ class TWOAI:
                 res = self.next_response(show_output=True)
                 if self.exit_word in res:
                     self.exit_word_count += 1
+                    logging.info("Exit word detected.")
                 if self.exit_word_count == self.max_exit_words:
                     print(Fore.RED + "The conversation was concluded..." + Style.RESET_ALL)
+                    logging.info("The conversation was concluded...")
                     self.__show_cursor()
                     return
         except KeyboardInterrupt:
             print(Fore.RED + "Closing Conversation..." + Style.RESET_ALL)
+            logging.info("Closing Conversation...")
             self.__show_cursor()
             return

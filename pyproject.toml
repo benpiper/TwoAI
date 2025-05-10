@@ -27,7 +27,7 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 [tool.pdm.scripts]
-example = "python src/examples/main.py"
+example = "python src/main.py"
 test = "python -m unittest discover"
 
 [tool.pdm]

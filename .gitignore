@@ -6,3 +6,4 @@
 /.pdm-build
 .pdm-python
 /pdm.lock
+debug.log

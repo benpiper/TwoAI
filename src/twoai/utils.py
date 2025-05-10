@@ -1,6 +1,6 @@
 from typing import TypedDict
 
-DEFAULT_HOST = "http://localhost:11434"
+DEFAULT_HOST = "http://192.168.88.86:11434"
 
 class Agent(TypedDict):
     name: str # the name of the agent

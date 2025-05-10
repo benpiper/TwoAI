@@ -28,12 +28,15 @@ If you are using [pdm](https://github.com/pdm-project/pdm) you can install the p
 ```bash
 git clone https://github.com/Fus3n/TwoAI
 cd TwoAI
+# without pdm
 pip install -r requirements.txt
-python src/example/main.py llama3
+python src/main.py llama3
 # with pdm
+pdm install
 pdm run example llama3
 ```
 
+#### main.py
 ```py
 # Setup
 

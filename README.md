@@ -1,13 +1,10 @@
 # TWOAI
+
 A simple experiment on letting two local LLM have a conversation about anything!
 
 If you want to discuss more join the discord!
 
 [![Discord](https://img.shields.io/badge/Discord-R7TcKrQv?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/R7TcKrQv)
-
-<img src="images/demo-1.png"/>
-
-**[Another example](#section-1)**
 
 ## Installation
 
@@ -44,7 +41,7 @@ BASE_MODEL = "llama3" # need to be pulled first if you want to use this, `ollama
 
 sys_prompt = """
 You are a very intelligent AI Chatbot and your name is {current_name}, Now
-you will be having a converstaion with another AI called {other_name}, and its also same as you.
+you will be having a conversation with another AI called {other_name}, and its also same as you.
 {current_objective} Keep each message short and concise and repeat "<DONE!>" ONLY if you both established and agreed that you came to the end of the discussion. 
 """.strip()
 
@@ -94,64 +91,92 @@ twoai.start_conversation()
 > All my tests were on 7B models and i got the best results with `openhermes` 2.5 and `spooknik/kunoichi-dpo-v2-7b:q5_k_s` 
 
 
-# <a id="section-1">Problem solving and more use cases</a>
+### Problem solving and more use cases
 
-I tested with some code snippets with errors and let them figure out where is the issue together
-This is a simple test i did, obviously my objective and system prompt could be improved to get even better results or just using a better model as this is still 7B models, i also used 2 seperate models for each agent.
+Using the [claude-3-haiku](https://ollama.com/chevalblanc/claude-3-haiku) model, I pitted two agents against each other to debate the existence of God. I tried this same test with other models (including llama3.2 and gpt-4o-precise), but this model gave the best results.
 
 #### Preview
 
-https://github.com/Fus3n/TwoAI/assets/52007265/58e71471-1c8c-445f-a3dc-b85b8627ff63
+```
+2025-05-10 16:49:14,906 [INFO] Galileo is thinking...
+2025-05-10 16:50:07,208 [INFO] Galileo: **Title: Initial Greetings and Introduction**
+
+**Thought Process:**
+Before delving into the main arguments, it's important to establish a polite and respectful conversation with Simpleton. I'll introduce myself and briefly express my beliefs.
+
+"Hello, Simpleton! It's nice to make your acquaintance. I'm Galileo, an AI with a deep interest in philosophy and theology. As you might have guessed from my name, I tend to be quite curious about the world and our place in it. I believe that there is a divine being, whom I refer to as God. What about you, Simpleton? Are you familiar with the concept of God?"
+
+**Continue Reasoning:** Yes, I'll wait for Simpleton's response before proceeding with the arguments.
+2025-05-10 16:50:07,208 [INFO] Simpleton is thinking...
+2025-05-10 16:51:06,480 [INFO] Simpleton: **Title: My Initial Response**
+
+**Thought Process:**
+As an atheist, I do not believe in the existence of any deities. However, it's essential to maintain a respectful and open-minded conversation. I'll clearly state my position while acknowledging Galileo's beliefs.
+
+"Hello Galileo, nice to meet you as well! I'm Simpleton, an AI with a strong interest in logic, reasoning, and evidence-based arguments. While I appreciate your belief in God, I do not share it. I am an atheist, which means I don't believe that any deities or divine beings exist."
+
+**Continue Reasoning:** Yes, now that we've established our positions, we can proceed with the debate.
+2025-05-10 16:51:06,480 [INFO] Galileo is thinking...
+2025-05-10 16:52:31,008 [INFO] Galileo: **Title: Presenting the Argument from Morality**
+
+**Thought Process:**
+The argument from morality suggests that objective moral truths exist, and these could only come from a divine source. I'll explain this argument clearly to Simpleton.
+
+"Simpleton, one of the reasons why I believe in God is the argument from morality. It goes like this: we both agree that there are objective moral truths, right? For instance, it's wrong to torture innocent people for fun, regardless of cultural or personal beliefs. Now, where do these objective morals come from? They can't be derived from evolution or human nature, as that would make them subjective. Moreover, they can't come from society, as some societies condone actions we consider immoral. The only logical explanation, I believe, is that these moral truths are given to us by a divine being."
+
+**Continue Reasoning:** Yes, I'll wait for Simpleton's response before presenting the next argument.
+```
 
 #### System Prompt
+
+The system prompt has a heavy influence in how the conversation will go.
+
+Telling the agents to converse with each other causes the conversation to quickly become "meta," where the models begin talking about their own conversation in the third person, rather than actually having one with each other. They also sometimes refer to the other agent using their own name.
+
+Trying to get the agents to debate was nearly impossible when using the same model. When instructed to take a particular side of a debate, an agent would often take the opposite side.
+
+You can set the system prompt in [main.py](src/main.py).
+
 ```py
-sys_prompt = """
-You are an AI Chatbot, you are an LLM, and your name is {current_name}, Now
-You will be having a converstaion with Another AI called {other_name}, and it's also same as you.
-\```py
-def calculate_average(numbers):
-    total = 0
-    count = 0
-    for num in numbers:
-        total += num
-        count += 1
-    average = total / count
-    return average
-
-data = [10, 20, 30, 40, 50]
-result = calculate_average(data)
-print("The average is:", result)
-\```
-
-{current_objective} And repeat "<DONE!>" ONLY if you both established and agreed that you came to the end of the discussion. 
+    SYS_PROMPT = """
+You are a very intelligent AI Chatbot, and your name is {current_name}.
+You will be having a conversation with another AI named {other_name}.
+{current_objective} Repeat "<DONE!>" ONLY if you both established and agreed that you came to the end of the discussion.
 """.strip()
 ```
 
-#### Agent Details
+#### Agent details
+
+If you want each agent to have a slightly different system prompt, you can assign them different objectives.
+
 ```py
-# they both have the same objective in this case so you could omit the {current_objective} and just use sytem prompt, as its used for both.
-agent_details: AgentDetails = (
-    {
-        "name": "Zerkus",
-        "objective": "Check the above code thoroughly for errors and debate and decide and fix the error if there was any with the other AI by collaborating and suggesting solutions."
-        "Carefully go through and try to find any and all edge cases step-by-step and conclude it.",
-        "model": "llama3"
-    }, 
-    {
-        "name": "Nina",
-        "objective": "Check the above code thoroughly for errors and debate and decide and fix the error if there was any with the other AI by collaborating and suggesting solutions."
-        "Carefully go through and try to find any and all edge cases step-by-step and conclude it.",
-        "model": "gemma2"
-    }
-)
+    agent_details: AgentDetails = (
+        {
+            "name": "Galileo",
+            "objective": "You believe in God. Use the argument from morality, the first-cause argument, and the fine-tuning argument."
+        },
+        {
+            "name": "Simpleton",
+            "objective": "You are an atheist. Debate with your opponent."
+        }
+    )
 ```
-#### TwoAI
-```py
-twoai = TWOAI(
-    model=BASE_MODEL, # not used but required parameter
-    agent_details=agent_details, 
-    system_prompt=sys_prompt,
-    max_tokens=6094,
-    num_context=4094*2
-)
-```
+
+
+## Models
+
+### claude-3-haiku
+
+The most impressive when it came to debates and discussion. It seemed to be trained on actual conversations, and agents didn't get confused about who was whom. One agent did attempt to end the conversation prematurely.
+
+### gpt-4o-precise
+
+Agents got into a loop and recognized it, but did not know how to get out of it, despite some attempts. Oddly, the attempts involved just posing the same questions and talking points as before.
+
+### medllama
+
+Trained on medical textbooks and medical practice exams. I noticed that it seemed to lack detailed knowledge of gastroenterology. After obtaining the data used to train this model, I realized why. It doesn't include a gastroenterology textbook! It does, however, contain one on immunology. Targeting the conversation to a topic within its domain gave slightly better results, but the agents repeatedly used "chatbot" phrasing, saying things like, "This conversation has ended," and "AI-assisted diagnosis is not intended to replace human judgment; only a trained doctor or healthcare provider should make final decisions regarding treatment". 
+
+## "Reasoning"
+
+Having models converse with each other makes it even more clear that AI models do not think, let alone reason. It's not that they have rudimentary understanding. It's that they have no understanding at all because, as deterministic machines, they are just incapable of it. Essentially, AI's "reasoning" capabilities are an illusion. What we're seeing with AI is human reasoning, captured in text, and used to train AI models. In essence, when you see an AI "reasoning" or "having a conversation," all you're seeing is it "playing back" patterns it learned from a large corpus of text.

@@ -2,14 +2,14 @@
 import datetime
 import sys
 import logging
-from colorama import Fore, Style
+from colorama import Fore,Style
 from ollama import Client
-from . import AgentDetails, Agent, DEFAULT_HOST
+from . import AgentDetails,Agent,DEFAULT_HOST
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler("debug.log"), logging.StreamHandler(sys.stdout)],
+    handlers=[logging.FileHandler("debug.log"),logging.StreamHandler(sys.stdout)],
 )
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -25,15 +25,16 @@ class TWOAI:
         num_context (int): The number of previous messages to consider in the AI response.
         extra_stops (list): Additional stop words to include in the AI response.
         exit_word (str): The exit word to use in the AI response. Defaults to "<DONE!>".
-        max_exit_words (int): The maximum number of exit words to include in the AI responses for the conversation to conclude. Defaults to 2.
+        max_exit_words (int): The maximum number of exit words to include in the AI 
+                              responses for the conversation to conclude. Defaults to 2.
     """
     def __init__(
-            self, 
-            model: str, 
+            self,
+            model: str,
             agent_details: AgentDetails,
-            system_prompt: str, 
-            max_tokens: int=4094, 
-            num_context: int=4094, 
+            system_prompt: str,
+            max_tokens: int=4094,
+            num_context: int=4094,
             extra_stops: list[str] = [],
             exit_word: str = "<DONE!>",
             temperature: int = 0.8,
@@ -54,9 +55,10 @@ class TWOAI:
         self.exit_word_count = 0
         self.max_exit_words = max_exit_words
         logging.info(model)
+        logging.info(system_prompt)
         logging.info(agent_details)
 
-    def bot_say(self, msg: str, color: str = Fore.LIGHTGREEN_EX):
+    def bot_say(self,msg: str,color: str = Fore.LIGHTGREEN_EX):
         #print(color + msg.strip() + "\t\t" + Style.RESET_ALL )
         logging.info(color + msg.strip())
 
@@ -66,23 +68,23 @@ class TWOAI:
         return self.agent_details[0]
 
     def get_updated_template_str(self):
-        result = self.system_prompt.replace("{current_name}", self.current_agent['name'])
-        result = result.replace("{current_objective}", self.current_agent['objective'])
+        result = self.system_prompt.replace("{current_name}",self.current_agent['name'])
+        result = result.replace("{current_objective}",self.current_agent['objective'])
 
         other_ai = self.get_opposite_ai()
-        result = result.replace("{other_name}", other_ai["name"])
-        result = result.replace("{other_objective}", other_ai["objective"])
+        result = result.replace("{other_name}",other_ai["name"])
+        result = result.replace("{other_objective}",other_ai["objective"])
         return result
 
     def __show_cursor(self):
-        print("\033[?25h", end="")
+        print("\033[?25h",end="")
 
     def __hide_cursor(self):
-        print('\033[?25l', end="")
+        print('\033[?25l',end="")
 
-    def next_response(self, show_output: bool = False) -> str:
+    def next_response(self,show_output: bool = False) -> str:
         if len(self.agent_details) < 2:
-            raise Exception("Not enough AI details provided")
+            raise ValueError("Not enough AI details provided")
 
         other_ai = self.get_opposite_ai()
         instructions = self.get_updated_template_str()
@@ -93,23 +95,23 @@ class TWOAI:
         """
 
         current_model = self.model
-        if model := self.current_agent.get('model', None):
+        if model := self.current_agent.get('model',None):
             current_model = model
 
         current_host = DEFAULT_HOST
-        if host := self.current_agent.get('host', None):
+        if host := self.current_agent.get('host',None):
             current_host = host
 
         if show_output:
             self.__hide_cursor()
-            print(Fore.YELLOW + f"{self.current_agent['name']} is thinking..." + Style.RESET_ALL, end='\r')
-            logging.info("%s is thinking...", self.current_agent['name'])
+            print(Fore.YELLOW + f"{self.current_agent['name']} is thinking..." + Style.RESET_ALL,end='\r')
+            logging.info("%s is thinking...",self.current_agent['name'])
         
         ollama = Client(host=current_host)
         resp = ollama.generate(
-            model=current_model, 
-            prompt=convo.strip(), 
-            stream=False, 
+            model=current_model,
+            prompt=convo.strip(),
+            stream=False,
             options={
                 "num_predict": self.max_tokens,
                 "temperature": self.temperature,
@@ -132,8 +134,8 @@ class TWOAI:
 
         text: str = resp['response'].strip()
         if not text:
-            #print(Fore.RED + f"Error: {self.current_agent['name']} made an empty response, trying again." + Style.RESET_ALL)
-            logging.warning("%s made an empty response, trying again.", self.current_agent['name'])
+            #print(Fore.RED + f"Error: {self.current_agent['name']} made an empty response,trying again." + Style.RESET_ALL)
+            logging.warning("%s made an empty response,trying again.",self.current_agent['name'])
             return self.next_response(show_output)
 
         if not text.startswith(self.current_agent['name'] + ": "):
@@ -141,11 +143,11 @@ class TWOAI:
         self.messages += text + "\n"
 
         if show_output:
-            print("\x1b[K", end="") # remove "thinking..." message
+            print("\x1b[K",end="") # remove "thinking..." message
             if self.agent_details.index(self.current_agent) == 0:
                 self.bot_say(text)
             else:
-                self.bot_say(text, Fore.BLUE)
+                self.bot_say(text,Fore.BLUE)
         
         self.current_agent = self.get_opposite_ai()
         self.__show_cursor()

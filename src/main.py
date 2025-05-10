@@ -12,25 +12,25 @@ if __name__ == "__main__":
         print("Usage: python main.py <model_name>")
         sys.exit(1)
 
-    sys_prompt = """
+    SYS_PROMPT = """
 You are a very intelligent AI Chatbot, and your name is {current_name}.
 You will be having a conversation with another AI named {other_name}.
-{current_objective} Repeat "<DONE!>" ONLY if you both established and agreed that you came to the end of the discussion. Do not repeat yourself.
+{current_objective} Repeat "<DONE!>" ONLY if you both established and agreed that you came to the end of the discussion.
 """.strip()
     agent_details: AgentDetails = (
         {
             "name": "Galileo",
-            "objective": "Debate the existence of God with your opponent. Use the argument from morality, the fine-tuning argument, and first cause argument."
+            "objective": "You believe in God. Use the argument from morality, the first-cause argument, and the fine-tuning argument."
         },
         {
-            "name": "Fool",
-            "objective": "Debate the existence of God. You are an atheist. Your opponent is a theist. Draw an inference to the best explanation."
+            "name": "Simpleton",
+            "objective": "You are an atheist. Debate with your opponent."
         }
     )
     twoai = TWOAI(
-        model=BASE_MODEL, 
-        agent_details=agent_details, 
-        system_prompt=sys_prompt,
+        model=BASE_MODEL,
+        agent_details=agent_details,
+        system_prompt=SYS_PROMPT,
 
     )
     twoai.start_conversation()

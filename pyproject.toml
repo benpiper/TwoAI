@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Default template for PDM package"
 authors = [
     {name = "Fusen", email = "fus3ngames@gmail.com"},
+    {name = "Ben Piper", email = "ben@benpiper.com"}
 ]
 dependencies = [
     "anyio==4.3.0",

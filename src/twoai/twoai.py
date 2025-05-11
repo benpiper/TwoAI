@@ -54,7 +54,7 @@ class TWOAI:
         self.exit_word = exit_word
         self.exit_word_count = 0
         self.max_exit_words = max_exit_words
-        logging.info(model)
+        logging.info("Model: %s", model)
         logging.info(system_prompt)
         logging.info(agent_details)
 

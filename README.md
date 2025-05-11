@@ -17,26 +17,12 @@ ollama pull <model-name>
 ```
 The installation commands are usually in the library page.
 
-### Usage for TwoAI
-Example in `src/example/main.py`
-If you are using [pdm](https://github.com/pdm-project/pdm) you can install the package as with `pdm install` 
+### Configuration
 
-- Manual
-```bash
-git clone https://github.com/Fus3n/TwoAI
-cd TwoAI
-# without pdm
-pip install -r requirements.txt
-python src/main.py llama3
-# with pdm
-pdm install
-pdm run example llama3
-```
+You need to specify the model, the system prompt, and the host of your Ollama server. The model can be specified in the [config.py](config.py) file, or on the command line (see the next section.) The system prompt is specified in the same file. The Ollama server is specified in [utils.py](utils.py).
 
-#### main.py
+#### config.py
 ```py
-# Setup
-
 BASE_MODEL = "llama3" # need to be pulled first if you want to use this, `ollama pull llama3`
 
 sys_prompt = """
@@ -59,37 +45,24 @@ agent_details: AgentDetails = (
         "and you think the Egg came first."
     }
 )
-
-twoai = TWOAI(
-    model=BASE_MODEL, 
-    agent_details=agent_details, 
-    system_prompt=sys_prompt
-    exit_word="<DONE!>",
-    max_exit_words=2,
-)
-```
-Now to get response there are two ways
-
-```py
-twoai.next_response(show_output=True)
-twoai.next_response(show_output=True)
-twoai.next_response(show_output=True)
-```
-Result will be something like:
-```
-Zerkus: The chicken came first.
-Nina: The egg came first.
-Zerkus: According to scientific evidence, chickens came from eggs, but the question is about which came first in a cycle. Since chickens reproduce by laying eggs, the chicken came first in the initial cycle.
-```
-**Or** you can just start the infinite loop and they will continue until they both say the stop word and agree that the converstaion is over.
-```py
-twoai.start_conversation()
 ```
 
-> The above conversation is from the data they are trained on and not from the internet, they cant do that yet.
+### Usage for TwoAI
 
-> All my tests were on 7B models and i got the best results with `openhermes` 2.5 and `spooknik/kunoichi-dpo-v2-7b:q5_k_s` 
+Example in `src/example/main.py`
+If you are using [pdm](https://github.com/pdm-project/pdm) you can install the package as with `pdm install` 
 
+- Manual
+```bash
+git clone https://github.com/Fus3n/TwoAI
+cd TwoAI
+# without pdm
+pip install -r requirements.txt
+python src/main.py llama3
+# with pdm
+pdm install
+pdm run example llama3
+```
 
 ### Problem solving and more use cases
 
@@ -180,3 +153,28 @@ Trained on medical textbooks and medical practice exams. I noticed that it seeme
 ## "Reasoning"
 
 Having models converse with each other makes it even more clear that AI models do not think, let alone reason. It's not that they have rudimentary understanding. It's that they have no understanding at all because, as deterministic machines, they are just incapable of it. Essentially, AI's "reasoning" capabilities are an illusion. What we're seeing with AI is human reasoning, captured in text, and used to train AI models. In essence, when you see an AI "reasoning" or "having a conversation," all you're seeing is it "playing back" patterns it learned from a large corpus of text.
+
+## Miscellaneous
+
+Now to get response there are two ways
+
+```py
+twoai.next_response(show_output=True)
+twoai.next_response(show_output=True)
+twoai.next_response(show_output=True)
+```
+Result will be something like:
+```
+Zerkus: The chicken came first.
+Nina: The egg came first.
+Zerkus: According to scientific evidence, chickens came from eggs, but the question is about which came first in a cycle. Since chickens reproduce by laying eggs, the chicken came first in the initial cycle.
+```
+**Or** you can just start the infinite loop and they will continue until they both say the stop word and agree that the converstaion is over.
+```py
+twoai.start_conversation()
+```
+
+> The above conversation is from the data they are trained on and not from the internet, they cant do that yet.
+
+> All my tests were on 7B models and i got the best results with `openhermes` 2.5 and `spooknik/kunoichi-dpo-v2-7b:q5_k_s` 
+

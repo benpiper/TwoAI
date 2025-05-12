@@ -2,6 +2,7 @@
 import datetime
 import sys
 import logging
+from difflib import SequenceMatcher
 from colorama import Fore,Style
 from ollama import Client
 from . import AgentDetails,Agent,DEFAULT_HOST
@@ -13,6 +14,7 @@ logging.basicConfig(
 )
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
+
 
 class TWOAI:
     """
@@ -37,8 +39,10 @@ class TWOAI:
             num_context: int=4094,
             extra_stops: list[str] = [],
             exit_word: str = "<DONE!>",
-            temperature: int = 0.8,
-            max_exit_words: int = 2
+            temperature: float = 0.8,
+            max_exit_words: int = 2,
+            similarity_ratio_warning_threshold: float = 0.6,
+            similarity_ratio_exit_threshold: float = 0.9
         ) -> None:
         self.agent_details = agent_details
         self.model = model
@@ -49,18 +53,20 @@ class TWOAI:
         self.temperature = temperature
 
         self.messages = ""
+        self.conversation = []
         self.current_agent = agent_details[0]
 
         self.exit_word = exit_word
         self.exit_word_count = 0
         self.max_exit_words = max_exit_words
+        self.similarity_ratio_warning_threshold = similarity_ratio_warning_threshold
+        self.similarity_ratio_exit_threshold = similarity_ratio_exit_threshold
         logging.info("Model: %s", model)
         logging.info(system_prompt)
         logging.info(agent_details)
 
     def bot_say(self,msg: str,color: str = Fore.LIGHTGREEN_EX):
-        #print(color + msg.strip() + "\t\t" + Style.RESET_ALL )
-        logging.info(color + msg.strip())
+        print(color + msg.strip() + "\t\t" + Style.RESET_ALL )
 
     def get_opposite_ai(self) -> Agent:
         if self.current_agent['name'] == self.agent_details[0]['name']:
@@ -143,7 +149,7 @@ class TWOAI:
         self.messages += text + "\n"
 
         if show_output:
-            print("\x1b[K",end="") # remove "thinking..." message
+            #print("\x1b[K",end="") # remove "thinking..." message
             if self.agent_details.index(self.current_agent) == 0:
                 self.bot_say(text)
             else:
@@ -156,7 +162,17 @@ class TWOAI:
     def start_conversation(self):
         try:
             while True:
+                logging.info("Starting conversation...")
                 res = self.next_response(show_output=True)
+                self.conversation.append(res)
+                if len(self.conversation) > 1:
+                    similarity_ratio = SequenceMatcher(None, self.conversation[-1], self.conversation[-2]).ratio()
+                    logging.info("Similarity of last two messages: %s", similarity_ratio)
+                    if similarity_ratio > self.similarity_ratio_warning_threshold:
+                        logging.warning("Similarity ratio warning threshold exceeded. Agents may be stuck in a loop.")
+                    if similarity_ratio > self.similarity_ratio_exit_threshold:
+                        logging.warning("Similarity ratio exit threshold exceeded. Terminating conversation.")
+                        return
                 if self.exit_word in res:
                     self.exit_word_count += 1
                     logging.info("Exit word detected.")

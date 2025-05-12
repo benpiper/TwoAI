@@ -1,21 +1,12 @@
 # TWOAI
 
-A simple experiment on letting two local LLM have a conversation about anything!
-
-If you want to discuss more join the discord!
-
-[![Discord](https://img.shields.io/badge/Discord-R7TcKrQv?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/R7TcKrQv)
+A simple experiment on letting two LLM agents have a conversation about anything!
 
 ## Installation
 
-First you need [Ollama](https://ollama.com/), install the executable as per the instructions.
-After that just make sure ollama is running in background, check your system tray.
-then find the model you like [https://ollama.com/library](https://ollama.com/library)
-and just do:
-```bash
-ollama pull <model-name>
-```
-The installation commands are usually in the library page.
+First you need [Ollama](https://ollama.com/). You can run it locally, or it can be running on a separate server.
+
+You will need to have at least one Ollama model installed. You can find models at [https://ollama.com/library](https://ollama.com/library)
 
 ### Configuration
 

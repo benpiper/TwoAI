@@ -10,7 +10,7 @@ You will need to have at least one Ollama model installed. You can find models a
 
 ### Configuration
 
-You need to specify the model, the system prompt, and the host of your Ollama server. The model can be specified in the [config.py](config.py) file, or on the command line (see the next section.) The system prompt is specified in the same file. The Ollama server is specified in [utils.py](utils.py).
+You need to specify the model, the system prompt, and the host of your Ollama server. The model can be specified in the [config.py](src/config.py) file, or on the command line (see the next section.) The system prompt is specified in the same file. The Ollama server is specified in [utils.py](src/utils.py).
 
 #### System Prompt
 
@@ -35,7 +35,7 @@ These are examples of the [local minimum](https://www.allaboutcircuits.com/techn
 
 #### config.py
 ```py
-BASE_MODEL = "llama3" # need to be pulled first if you want to use this, `ollama pull llama3`
+BASE_MODEL = "llama3"
 
 sys_prompt = """
 You are a very intelligent AI Chatbot and your name is {current_name}, Now
@@ -48,7 +48,7 @@ agent_details: AgentDetails = (
         "name": "Zerkus",
         "objective": "Debate against the other AI on what came first, the chicken or the egg."
         "and you think the chicken came first."
-        "model": BASE_MODEL, # this is optional, but here so you can use different models for different agent
+        "model": BASE_MODEL, # this is optional, but here so you can use different models for different agents
         "host": "http://localhost:11434" # optional, so you can use multiple host machines for each model
     }, 
     {
@@ -61,7 +61,7 @@ agent_details: AgentDetails = (
 
 ### Usage for TwoAI
 
-Example in `src/example/main.py`
+Example in `src/main.py`
 If you are using [pdm](https://github.com/pdm-project/pdm) you can install the package as with `pdm install` 
 
 - Manual

@@ -10,7 +10,7 @@ You will need to have at least one Ollama model installed. You can find models a
 
 ### Configuration
 
-You need to specify the model, the system prompt, and the host of your Ollama server. The model can be specified in the [config.py](src/config.py) file, or on the command line (see the next section.) The system prompt is specified in the same file. The Ollama server is specified in [utils.py](src/utils.py).
+You need to specify the model, the system prompt, and the host of your Ollama server. The model can be specified in the [config.py](src/config.py) file, or on the command line (see the next section.) The system prompt is specified in the same file. The Ollama server is specified in [utils.py](src/twowai/utils.py).
 
 #### System Prompt
 

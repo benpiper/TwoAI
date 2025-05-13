@@ -17,18 +17,23 @@ You need to specify the model, the system prompt, and the host of your Ollama se
 The system prompt has a heavy influence in how the conversation will go, but that doesn't mean the agents will follow it. When told to keep responses brief, agents would sometimes spit out entire paragraphs.
 
 *Narrator persona*
+
 Telling the agents to converse with each other sometimes causes the conversation to quickly become "meta," where the models begin talking about their own conversation in the third person, rather than actually having one with each other.
 
 *Identity confusion*
+
 They also sometimes refer to the other agent using their own name. This often happens when one agent simply repeats what the other says.
 
 *Roleplaying*
+
 One agent takes on the role of both agents, essentially creating a simulated conversation, and playing both parts. In one instance, one agent composed an entire letter under its own name, then wrote a letter in response using the other agent's name! In another instance, the agent signed the letter `[Your Name]`.
 
 *Debates*
-Trying to get the agents to debate was challenging when using the same model. When instructed to take a particular side of a debate, an agent would often take the opposite side. Using the internlm2 model, I was able to get the agents to debate the origins of SARS-CoV-2 in great detail. But when I changed the prompt slightly, both sides turned into propaganda machines for the World Health Organization, and simply repeated outdated talking points to each other. Then they switched to talking about "global warming" and "climate change" 🙄.
+
+Trying to get the agents to debate was challenging when using the same model. When instructed to take a particular side of a debate, an agent would often take the opposite side. Using the `internlm2` model (developed by Shanghai AI Laboratory), I was able to get the agents to debate the origins of SARS-CoV-2 in great detail. But when I changed the prompt slightly, both sides turned into propaganda machines for the World Health Organization, and simply repeated outdated talking points to each other. Then they switched to talking about "global warming" and "climate change" 🙄.
 
 *Changing the subject*
+
 One agent decides it's done with the topic at hand and switches to another topic. When this happened, the other agent would follow suit with no argument. Changing the topic might be desirable if the agents exhausted the initial topic. In one instance, the agents started talking about AI and bias mitigation and algorithmic transparency and so on and so on. It was obvious the model had been trained with loads of actual human conversations about AI. But the original topic I assigned the agents was the origin of SARS-CoV-2.
 
 These are examples of the [local minimum](https://www.allaboutcircuits.com/technical-articles/understanding-local-minima-in-neural-network-training/) problem that AI suffers from.
@@ -59,9 +64,12 @@ agent_details: AgentDetails = (
 )
 ```
 
+#### Similarity scoring
+
+To detect and avoid endless looping, the last two responses are continually checked for similarity using the [SequenceMatcher](https://docs.python.org/3/library/difflib.html#difflib.SequenceMatcher) class. You can set warning and exit thresholds in [config.py](src/config.py).
+
 ### Usage for TwoAI
 
-Example in `src/main.py`
 If you are using [pdm](https://github.com/pdm-project/pdm) you can install the package as with `pdm install` 
 
 - Manual
@@ -75,6 +83,8 @@ python src/main.py llama3
 pdm install
 pdm run example llama3
 ```
+
+Logs are written to `debug.log`.
 
 ### Problem solving and more use cases
 

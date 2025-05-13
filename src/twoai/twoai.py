@@ -3,23 +3,23 @@ import datetime
 import sys
 import logging
 from difflib import SequenceMatcher
-from colorama import Fore,Style
+from colorama import Fore, Style
 from ollama import Client
-from . import AgentDetails,Agent,DEFAULT_HOST
+from . import AgentDetails, Agent, DEFAULT_HOST
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.FileHandler("debug.log"),logging.StreamHandler(sys.stdout)],
+    handlers=[logging.FileHandler("debug.log"),
+              logging.StreamHandler(sys.stdout)],
 )
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
-
 class TWOAI:
     """
     Class representing an AI that can engage in a conversation with another AI.
-    
+
         ai_details (AIDetails): Details of the AI including name and objective.
         model (str): The model used by the AI.
         system_prompt (str): The prompt for the AI conversation system.
@@ -30,20 +30,21 @@ class TWOAI:
         max_exit_words (int): The maximum number of exit words to include in the AI 
                               responses for the conversation to conclude. Defaults to 2.
     """
+
     def __init__(
-            self,
-            model: str,
-            agent_details: AgentDetails,
-            system_prompt: str,
-            max_tokens: int=4094,
-            num_context: int=4094,
-            extra_stops: list[str] = [],
-            exit_word: str = "<DONE!>",
-            temperature: float = 0.8,
-            max_exit_words: int = 2,
-            similarity_ratio_warning_threshold: float = 0.6,
-            similarity_ratio_exit_threshold: float = 0.9
-        ) -> None:
+        self,
+        model: str,
+        agent_details: AgentDetails,
+        system_prompt: str,
+        max_tokens: int = 4094,
+        num_context: int = 4094,
+        extra_stops: list[str] = [],
+        exit_word: str = "<DONE!>",
+        temperature: float = 0.8,
+        max_exit_words: int = 2,
+        similarity_ratio_warning_threshold: float = 0.4,
+        similarity_ratio_exit_threshold: float = 0.8
+    ) -> None:
         self.agent_details = agent_details
         self.model = model
         self.system_prompt = system_prompt
@@ -61,34 +62,40 @@ class TWOAI:
         self.max_exit_words = max_exit_words
         self.similarity_ratio_warning_threshold = similarity_ratio_warning_threshold
         self.similarity_ratio_exit_threshold = similarity_ratio_exit_threshold
-        logging.info("Model: %s", model)
-        logging.info(system_prompt)
-        logging.info(agent_details)
+        logging.debug("Model: %s", model)
+        logging.debug(system_prompt)
 
-    def bot_say(self,msg: str,color: str = Fore.LIGHTGREEN_EX):
-        print(color + msg.strip() + "\t\t" + Style.RESET_ALL )
+    def bot_say(self, msg: str, color: str = Fore.LIGHTGREEN_EX):
+        """ Print the agent's message """
+        print(color + msg.strip() + "\t\t" + Style.RESET_ALL)
 
     def get_opposite_ai(self) -> Agent:
+        """ Return the details of the opposite agent """
         if self.current_agent['name'] == self.agent_details[0]['name']:
+            logging.debug("Opposite agent is %s", self.agent_details[1]['name'])
             return self.agent_details[1]
+        logging.debug("Opposite agent is %s", self.agent_details[0]['name'])
         return self.agent_details[0]
 
     def get_updated_template_str(self):
-        result = self.system_prompt.replace("{current_name}",self.current_agent['name'])
-        result = result.replace("{current_objective}",self.current_agent['objective'])
+        result = self.system_prompt.replace(
+            "{current_name}", self.current_agent['name'])
+        result = result.replace("{current_objective}",
+                                self.current_agent['objective'])
 
         other_ai = self.get_opposite_ai()
-        result = result.replace("{other_name}",other_ai["name"])
-        result = result.replace("{other_objective}",other_ai["objective"])
+        result = result.replace("{other_name}", other_ai["name"])
+        result = result.replace("{other_objective}", other_ai["objective"])
         return result
 
     def __show_cursor(self):
-        print("\033[?25h",end="")
+        print("\033[?25h", end="")
 
     def __hide_cursor(self):
-        print('\033[?25l',end="")
+        print('\033[?25l', end="")
 
-    def next_response(self,show_output: bool = False) -> str:
+    def next_response(self, show_output: bool = False) -> str:
+        """ Send prompt """
         if len(self.agent_details) < 2:
             raise ValueError("Not enough AI details provided")
 
@@ -101,18 +108,20 @@ class TWOAI:
         """
 
         current_model = self.model
-        if model := self.current_agent.get('model',None):
+        if model := self.current_agent.get('model', None):
             current_model = model
 
         current_host = DEFAULT_HOST
-        if host := self.current_agent.get('host',None):
+        if host := self.current_agent.get('host', None):
             current_host = host
 
         if show_output:
             self.__hide_cursor()
-            print(Fore.YELLOW + f"{self.current_agent['name']} is thinking..." + Style.RESET_ALL,end='\r')
-            logging.info("%s is thinking...",self.current_agent['name'])
-        
+            print(
+                Fore.YELLOW + f"{self.current_agent['name']} is thinking..." + Style.RESET_ALL, end='\r')
+
+        logging.info("%s is thinking...", self.current_agent['name'])
+        logging.debug("Current prompt: %s", convo.strip())
         ollama = Client(host=current_host)
         resp = ollama.generate(
             model=current_model,
@@ -131,17 +140,17 @@ class TWOAI:
                     "<|end_header_id|>",
                     "<|eot_id|>",
                     "<|reserved_special_token",
-                   f"{other_ai['name']}: " if self.current_agent['name'] != other_ai['name'] else f"{self.current_agent['name']}: "
-                    
+                    f"{other_ai['name']}: " if self.current_agent['name'] != other_ai['name'] else f"{self.current_agent['name']}: "
+
                 ] + self.extra_stops
             }
         )
-        logging.debug(resp)
 
         text: str = resp['response'].strip()
         if not text:
-            #print(Fore.RED + f"Error: {self.current_agent['name']} made an empty response,trying again." + Style.RESET_ALL)
-            logging.warning("%s made an empty response,trying again.",self.current_agent['name'])
+            # print(Fore.RED + f"Error: {self.current_agent['name']} made an empty response,trying again." + Style.RESET_ALL)
+            logging.warning(
+                "%s made an empty response,trying again.", self.current_agent['name'])
             return self.next_response(show_output)
 
         if not text.startswith(self.current_agent['name'] + ": "):
@@ -149,35 +158,46 @@ class TWOAI:
         self.messages += text + "\n"
 
         if show_output:
-            #print("\x1b[K",end="") # remove "thinking..." message
+            # print("\x1b[K",end="") # remove "thinking..." message
             if self.agent_details.index(self.current_agent) == 0:
                 self.bot_say(text)
             else:
-                self.bot_say(text,Fore.BLUE)
-        
+                self.bot_say(text, Fore.BLUE)
+
         self.current_agent = self.get_opposite_ai()
         self.__show_cursor()
         return text
 
     def start_conversation(self):
+        """ Function to start the conversation """
+        logging.info("=== Starting conversation ===")
         try:
             while True:
-                logging.info("Starting conversation...")
-                res = self.next_response(show_output=True)
+                res = self.next_response(show_output=False)
                 self.conversation.append(res)
+                logging.info(res)
                 if len(self.conversation) > 1:
-                    similarity_ratio = SequenceMatcher(None, self.conversation[-1], self.conversation[-2]).ratio()
-                    logging.info("Similarity of last two messages: %s", similarity_ratio)
+                    similarity_ratio = SequenceMatcher(
+                        None, self.conversation[-1], self.conversation[-2]).ratio()
+                    logging.info(
+                        "Similarity of last two messages: %s", similarity_ratio)
+                    similarity_ratio_all = SequenceMatcher(
+                        None, self.conversation[-1], ' '.join(self.conversation[:-1])).ratio()
+                    logging.info("Similarity of all messages: %s",
+                                 similarity_ratio_all)
                     if similarity_ratio > self.similarity_ratio_warning_threshold:
-                        logging.warning("Similarity ratio warning threshold exceeded. Agents may be stuck in a loop.")
+                        logging.warning(
+                            "Similarity ratio warning threshold exceeded. Agents may be stuck in a loop.")
                     if similarity_ratio > self.similarity_ratio_exit_threshold:
-                        logging.warning("Similarity ratio exit threshold exceeded. Terminating conversation.")
+                        logging.warning(
+                            "Similarity ratio exit threshold exceeded. Terminating conversation.")
                         return
                 if self.exit_word in res:
                     self.exit_word_count += 1
                     logging.info("Exit word detected.")
                 if self.exit_word_count == self.max_exit_words:
-                    print(Fore.RED + "The conversation was concluded..." + Style.RESET_ALL)
+                    print(
+                        Fore.RED + "The conversation was concluded..." + Style.RESET_ALL)
                     logging.info("The conversation was concluded...")
                     self.__show_cursor()
                     return

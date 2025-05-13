@@ -16,6 +16,74 @@ logging.basicConfig(
 
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+
+class AIConfig:
+    """
+    Class representing the configuration of an AI.
+
+    Attributes:
+        model (str): The model used by the AI.
+        max_tokens (int): The maximum number of tokens to generate in the AI response.
+        num_context (int): The number of previous messages to consider in the AI response.
+        extra_stops (list): Additional stop words to include in the AI response.
+        temperature (float): The temperature of the AI response.
+    """
+
+    def __init__(
+        self,
+        model: str,
+        max_tokens: int = 4094,
+        num_context: int = 4094,
+        extra_stops: list[str] = [],
+        temperature: float = 0.8
+    ) -> None:
+        self.model = model
+        self.max_tokens = max_tokens
+        self.num_context = num_context
+        self.extra_stops = extra_stops
+        self.temperature = temperature
+
+
+class ConversationConfig:
+    """
+    Class representing the configuration of a conversation.
+
+    Attributes:
+        system_prompt (str): The prompt for the AI conversation system.
+        exit_word (str): The exit word to use in the AI response.
+        max_exit_words (int): The maximum number of exit words to include in the AI 
+                              responses for the conversation to conclude.
+        similarity_ratio_warning_threshold (float): The similarity ratio warning threshold.
+        similarity_ratio_exit_threshold (float): The similarity ratio exit threshold.
+    """
+
+    def __init__(
+        self,
+        system_prompt: str,
+        exit_word: str = "<DONE!>",
+        max_exit_words: int = 2,
+        similarity_ratio_warning_threshold: float = 0.4,
+        similarity_ratio_exit_threshold: float = 0.8
+    ) -> None:
+        self.system_prompt = system_prompt
+        self.exit_word = exit_word
+        self.max_exit_words = max_exit_words
+        self.similarity_ratio_warning_threshold = similarity_ratio_warning_threshold
+        self.similarity_ratio_exit_threshold = similarity_ratio_exit_threshold
+
+
+class AgentManager:
+    """
+    Class representing the management of AI agents.
+
+    Attributes:
+        agent_details (AgentDetails): Details of the AI including name and objective.
+    """
+
+    def __init__(self, agent_details: AgentDetails) -> None:
+        self.agent_details = agent_details
+
+
 class TWOAI:
     """
     Class representing an AI that can engage in a conversation with another AI.
@@ -45,16 +113,18 @@ class TWOAI:
         similarity_ratio_warning_threshold: float = 0.4,
         similarity_ratio_exit_threshold: float = 0.8
     ) -> None:
-        self.agent_details = agent_details
-        self.model = model
+        self.ai_config = AIConfig(model, max_tokens, num_context, extra_stops, temperature)
         self.system_prompt = system_prompt
-        self.max_tokens = max_tokens
-        self.num_context = num_context
-        self.extra_stops = extra_stops
-        self.temperature = temperature
+        self.agent_details = agent_details
+        self.model = self.ai_config.model
+        self.max_tokens = self.ai_config.max_tokens
+        self.num_context = self.ai_config.num_context
+        self.extra_stops = self.ai_config.extra_stops
+        self.temperature = self.ai_config.temperature
 
         self.messages = ""
         self.conversation = []
+        # Start with the first agent in the agent_details config
         self.current_agent = agent_details[0]
 
         self.exit_word = exit_word
@@ -72,7 +142,8 @@ class TWOAI:
     def get_opposite_ai(self) -> Agent:
         """ Return the details of the opposite agent """
         if self.current_agent['name'] == self.agent_details[0]['name']:
-            logging.debug("Opposite agent is %s", self.agent_details[1]['name'])
+            logging.debug("Opposite agent is %s",
+                          self.agent_details[1]['name'])
             return self.agent_details[1]
         logging.debug("Opposite agent is %s", self.agent_details[0]['name'])
         return self.agent_details[0]

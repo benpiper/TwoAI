@@ -34,12 +34,14 @@ class AIConfig:
         model: str,
         max_tokens: int = 4094,
         num_context: int = 4094,
-        extra_stops: list[str] = [],
+        extra_stops: list[str] = None,
         temperature: float = 0.8
     ) -> None:
         self.model = model
         self.max_tokens = max_tokens
         self.num_context = num_context
+        if extra_stops is None:
+            extra_stops = []
         self.extra_stops = extra_stops
         self.temperature = temperature
 
@@ -51,7 +53,7 @@ class ConversationConfig:
     Attributes:
         system_prompt (str): The prompt for the AI conversation system.
         exit_word (str): The exit word to use in the AI response.
-        max_exit_words (int): The maximum number of exit words to include in the AI 
+        max_exit_words (int): The maximum number of exit words to include in the AI
                               responses for the conversation to conclude.
         similarity_ratio_warning_threshold (float): The similarity ratio warning threshold.
         similarity_ratio_exit_threshold (float): The similarity ratio exit threshold.
@@ -72,16 +74,16 @@ class ConversationConfig:
         self.similarity_ratio_exit_threshold = similarity_ratio_exit_threshold
 
 
-class AgentManager:
-    """
-    Class representing the management of AI agents.
+# class AgentManager:
+#     """
+#     Class representing the management of AI agents.
 
-    Attributes:
-        agent_details (AgentDetails): Details of the AI including name and objective.
-    """
+#     Attributes:
+#         agent_details (AgentDetails): Details of the AI including name and objective.
+#     """
 
-    def __init__(self, agent_details: AgentDetails) -> None:
-        self.agent_details = agent_details
+#     def __init__(self, agent_details: AgentDetails) -> None:
+#         self.agent_details = agent_details
 
 
 class TWOAI:
@@ -95,7 +97,7 @@ class TWOAI:
         num_context (int): The number of previous messages to consider in the AI response.
         extra_stops (list): Additional stop words to include in the AI response.
         exit_word (str): The exit word to use in the AI response. Defaults to "<DONE!>".
-        max_exit_words (int): The maximum number of exit words to include in the AI 
+        max_exit_words (int): The maximum number of exit words to include in the AI
                               responses for the conversation to conclude. Defaults to 2.
     """
 
@@ -104,36 +106,18 @@ class TWOAI:
         model: str,
         agent_details: AgentDetails,
         system_prompt: str,
-        max_tokens: int = 4094,
-        num_context: int = 4094,
-        extra_stops: list[str] = [],
-        exit_word: str = "<DONE!>",
-        temperature: float = 0.8,
-        max_exit_words: int = 2,
-        similarity_ratio_warning_threshold: float = 0.4,
-        similarity_ratio_exit_threshold: float = 0.8
+        exit_word_count: int = 0
     ) -> None:
-        self.ai_config = AIConfig(model, max_tokens, num_context, extra_stops, temperature)
-        self.system_prompt = system_prompt
+        self.ai_config = AIConfig(model)
+        self.conversation_config = ConversationConfig(system_prompt)
         self.agent_details = agent_details
-        self.model = self.ai_config.model
-        self.max_tokens = self.ai_config.max_tokens
-        self.num_context = self.ai_config.num_context
-        self.extra_stops = self.ai_config.extra_stops
-        self.temperature = self.ai_config.temperature
-
         self.messages = ""
         self.conversation = []
+        self.exit_word_count = exit_word_count
         # Start with the first agent in the agent_details config
         self.current_agent = agent_details[0]
-
-        self.exit_word = exit_word
-        self.exit_word_count = 0
-        self.max_exit_words = max_exit_words
-        self.similarity_ratio_warning_threshold = similarity_ratio_warning_threshold
-        self.similarity_ratio_exit_threshold = similarity_ratio_exit_threshold
         logging.debug("Model: %s", model)
-        logging.debug(system_prompt)
+        logging.debug(self.conversation_config.system_prompt)
 
     def bot_say(self, msg: str, color: str = Fore.LIGHTGREEN_EX):
         """ Print the agent's message """
@@ -149,7 +133,7 @@ class TWOAI:
         return self.agent_details[0]
 
     def get_updated_template_str(self):
-        result = self.system_prompt.replace(
+        result = self.conversation_config.system_prompt.replace(
             "{current_name}", self.current_agent['name'])
         result = result.replace("{current_objective}",
                                 self.current_agent['objective'])
@@ -172,13 +156,17 @@ class TWOAI:
 
         other_ai = self.get_opposite_ai()
         instructions = self.get_updated_template_str()
-        convo = f"""
-        {instructions}
+        if not self.current_agent['prompt_presented']:
+            convo = f"""
+            {instructions}
 
-        {self.messages}
-        """
-
-        current_model = self.model
+            {self.messages}
+            """
+        else:
+            convo = f"""
+            {self.messages}
+            """
+        current_model = self.ai_config.model
         if model := self.current_agent.get('model', None):
             current_model = model
 
@@ -199,9 +187,9 @@ class TWOAI:
             prompt=convo.strip(),
             stream=False,
             options={
-                "num_predict": self.max_tokens,
-                "temperature": self.temperature,
-                "num_ctx": self.num_context,
+                "num_predict": self.ai_config.max_tokens,
+                "temperature": self.ai_config.temperature,
+                "num_ctx": self.ai_config.num_context,
                 "stop": [
                     "<|im_start|>",
                     "<|im_end|>",
@@ -213,7 +201,7 @@ class TWOAI:
                     "<|reserved_special_token",
                     f"{other_ai['name']}: " if self.current_agent['name'] != other_ai['name'] else f"{self.current_agent['name']}: "
 
-                ] + self.extra_stops
+                ] + self.ai_config.extra_stops
             }
         )
 
@@ -235,6 +223,8 @@ class TWOAI:
             else:
                 self.bot_say(text, Fore.BLUE)
 
+        if not self.current_agent['prompt_presented']:
+            self.current_agent['prompt_presented'] = True
         self.current_agent = self.get_opposite_ai()
         self.__show_cursor()
         return text
@@ -256,17 +246,17 @@ class TWOAI:
                         None, self.conversation[-1], ' '.join(self.conversation[:-1])).ratio()
                     logging.info("Similarity of all messages: %s",
                                  similarity_ratio_all)
-                    if similarity_ratio > self.similarity_ratio_warning_threshold:
+                    if similarity_ratio > self.conversation_config.similarity_ratio_warning_threshold:
                         logging.warning(
                             "Similarity ratio warning threshold exceeded. Agents may be stuck in a loop.")
-                    if similarity_ratio > self.similarity_ratio_exit_threshold:
+                    if similarity_ratio > self.conversation_config.similarity_ratio_exit_threshold:
                         logging.warning(
                             "Similarity ratio exit threshold exceeded. Terminating conversation.")
                         return
-                if self.exit_word in res:
+                if self.conversation_config.exit_word in res:
                     self.exit_word_count += 1
                     logging.info("Exit word detected.")
-                if self.exit_word_count == self.max_exit_words:
+                if self.exit_word_count == self.conversation_config.max_exit_words:
                     print(
                         Fore.RED + "The conversation was concluded..." + Style.RESET_ALL)
                     logging.info("The conversation was concluded...")

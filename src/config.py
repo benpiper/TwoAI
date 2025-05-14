@@ -12,11 +12,13 @@ agent_details: AgentDetails = (
     {
         "name": "Galileo",
         "objective": "You believe that SARS-CoV-2 was made in a lab in Wuhan. Be aggressive. Mock and criticize anyone who believes it is natural.",
-        "model": "llama3.2"
+        "model": "llama3.2",
+        "prompt_presented": False
     },
     {
         "name": "Simpleton",
         "objective": "You claim that SARS-CoV-2 is a natural virus that emerged in the wild. You are a propaganda machine for China and the WHO.",
-        "model": "llama3.2"
+        "model": "llama3.2",
+        "prompt_presented": False
     }
 )

@@ -65,7 +65,7 @@ class ConversationConfig:
         exit_word: str = "<DONE!>",
         max_exit_words: int = 2,
         similarity_ratio_warning_threshold: float = 0.4,
-        similarity_ratio_exit_threshold: float = 0.8
+        similarity_ratio_exit_threshold: float = 0.9
     ) -> None:
         self.system_prompt = system_prompt
         self.exit_word = exit_word
@@ -156,7 +156,7 @@ class TWOAI:
 
         other_ai = self.get_opposite_ai()
         instructions = self.get_updated_template_str()
-        if not self.current_agent['prompt_presented']:
+        if self.current_agent['times_to_present_prompt'] > 0:
             convo = f"""
             {instructions}
 
@@ -166,6 +166,10 @@ class TWOAI:
             convo = f"""
             {self.messages}
             """
+        logging.debug("Times left to present prompt: %s",
+                      self.current_agent['times_to_present_prompt'])
+        if self.current_agent['times_to_present_prompt'] > 0:
+            self.current_agent['times_to_present_prompt'] = self.current_agent['times_to_present_prompt'] - 1
         current_model = self.ai_config.model
         if model := self.current_agent.get('model', None):
             current_model = model
@@ -223,8 +227,6 @@ class TWOAI:
             else:
                 self.bot_say(text, Fore.BLUE)
 
-        if not self.current_agent['prompt_presented']:
-            self.current_agent['prompt_presented'] = True
         self.current_agent = self.get_opposite_ai()
         self.__show_cursor()
         return text

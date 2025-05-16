@@ -14,7 +14,7 @@ logging.basicConfig(
               logging.StreamHandler(sys.stdout)],
 )
 
-logging.getLogger("httpx").setLevel(logging.WARNING)
+# logging.getLogger("httpx").setLevel(logging.WARNING)
 
 
 class AIConfig:
@@ -31,7 +31,7 @@ class AIConfig:
 
     def __init__(
         self,
-        model: str,
+        model: str = None,
         max_tokens: int = 4094,
         num_context: int = 4094,
         extra_stops: list[str] = None,
@@ -74,18 +74,6 @@ class ConversationConfig:
         self.similarity_ratio_exit_threshold = similarity_ratio_exit_threshold
 
 
-# class AgentManager:
-#     """
-#     Class representing the management of AI agents.
-
-#     Attributes:
-#         agent_details (AgentDetails): Details of the AI including name and objective.
-#     """
-
-#     def __init__(self, agent_details: AgentDetails) -> None:
-#         self.agent_details = agent_details
-
-
 class TWOAI:
     """
     Class representing an AI that can engage in a conversation with another AI.
@@ -103,9 +91,9 @@ class TWOAI:
 
     def __init__(
         self,
-        model: str,
         agent_details: AgentDetails,
         system_prompt: str,
+        model: str = "",
         exit_word_count: int = 0
     ) -> None:
         self.ai_config = AIConfig(model)
@@ -116,7 +104,6 @@ class TWOAI:
         self.exit_word_count = exit_word_count
         # Start with the first agent in the agent_details config
         self.current_agent = agent_details[0]
-        logging.debug("Model: %s", model)
         logging.debug(self.conversation_config.system_prompt)
 
     def bot_say(self, msg: str, color: str = Fore.LIGHTGREEN_EX):
@@ -126,10 +113,7 @@ class TWOAI:
     def get_opposite_ai(self) -> Agent:
         """ Return the details of the opposite agent """
         if self.current_agent['name'] == self.agent_details[0]['name']:
-            logging.debug("Opposite agent is %s",
-                          self.agent_details[1]['name'])
             return self.agent_details[1]
-        logging.debug("Opposite agent is %s", self.agent_details[0]['name'])
         return self.agent_details[0]
 
     def get_updated_template_str(self):
@@ -137,7 +121,7 @@ class TWOAI:
             "{current_name}", self.current_agent['name'])
         result = result.replace("{current_objective}",
                                 self.current_agent['objective'])
-
+        logging.debug("Current agent is %s", self.current_agent['name'])
         other_ai = self.get_opposite_ai()
         result = result.replace("{other_name}", other_ai["name"])
         result = result.replace("{other_objective}", other_ai["objective"])
@@ -156,24 +140,24 @@ class TWOAI:
 
         other_ai = self.get_opposite_ai()
         instructions = self.get_updated_template_str()
-        if self.current_agent['times_to_present_prompt'] > 0:
-            convo = f"""
+        if self.current_agent['times_to_present_system_prompt'] > 0:
+            prompt = f"""
             {instructions}
 
             {self.messages}
             """
         else:
-            convo = f"""
+            prompt = f"""
             {self.messages}
             """
         logging.debug("Times left to present prompt: %s",
-                      self.current_agent['times_to_present_prompt'])
-        if self.current_agent['times_to_present_prompt'] > 0:
-            self.current_agent['times_to_present_prompt'] = self.current_agent['times_to_present_prompt'] - 1
+                      self.current_agent['times_to_present_system_prompt'])
+        if self.current_agent['times_to_present_system_prompt'] > 0:
+            self.current_agent['times_to_present_system_prompt'] = self.current_agent['times_to_present_system_prompt'] - 1
         current_model = self.ai_config.model
         if model := self.current_agent.get('model', None):
             current_model = model
-
+            logging.debug("Current agent model: %s", current_model)
         current_host = DEFAULT_HOST
         if host := self.current_agent.get('host', None):
             current_host = host
@@ -184,11 +168,11 @@ class TWOAI:
                 Fore.YELLOW + f"{self.current_agent['name']} is thinking..." + Style.RESET_ALL, end='\r')
 
         logging.info("%s is thinking...", self.current_agent['name'])
-        logging.debug("Current prompt: %s", convo.strip())
+        logging.debug("Current prompt: %s", prompt.strip())
         ollama = Client(host=current_host)
         resp = ollama.generate(
             model=current_model,
-            prompt=convo.strip(),
+            prompt=prompt.strip(),
             stream=False,
             options={
                 "num_predict": self.ai_config.max_tokens,
@@ -233,7 +217,7 @@ class TWOAI:
 
     def start_conversation(self):
         """ Function to start the conversation """
-        logging.info("=== Starting conversation ===")
+        logging.info("======= Starting conversation =======")
         try:
             while True:
                 res = self.next_response(show_output=False)
@@ -243,11 +227,11 @@ class TWOAI:
                     similarity_ratio = SequenceMatcher(
                         None, self.conversation[-1], self.conversation[-2]).ratio()
                     logging.info(
-                        "Similarity of last two messages: %s", similarity_ratio)
+                        "Similarity of last two messages: %s", round(similarity_ratio, 2))
                     similarity_ratio_all = SequenceMatcher(
                         None, self.conversation[-1], ' '.join(self.conversation[:-1])).ratio()
                     logging.info("Similarity of all messages: %s",
-                                 similarity_ratio_all)
+                                 round(similarity_ratio_all, 2))
                     if similarity_ratio > self.conversation_config.similarity_ratio_warning_threshold:
                         logging.warning(
                             "Similarity ratio warning threshold exceeded. Agents may be stuck in a loop.")
@@ -261,11 +245,11 @@ class TWOAI:
                 if self.exit_word_count == self.conversation_config.max_exit_words:
                     print(
                         Fore.RED + "The conversation was concluded..." + Style.RESET_ALL)
-                    logging.info("The conversation was concluded...")
+                    logging.info("======= Conversation Concluded =======")
                     self.__show_cursor()
                     return
         except KeyboardInterrupt:
             print(Fore.RED + "Closing Conversation..." + Style.RESET_ALL)
-            logging.info("Closing Conversation...")
+            logging.info("======= Closing Conversation =======")
             self.__show_cursor()
             return

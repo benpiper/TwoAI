@@ -79,9 +79,7 @@ These are examples of the [local minimum](https://www.allaboutcircuits.com/techn
 
 If you are using [pdm](https://github.com/pdm-project/pdm) you can install the package as with `pdm install`
 
-- Manual
 ```bash
-git clone https://github.com/Fus3n/TwoAI
 cd TwoAI
 # without pdm
 pip install -r requirements.txt

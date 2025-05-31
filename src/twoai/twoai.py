@@ -64,8 +64,8 @@ class ConversationConfig:
         system_prompt: str,
         exit_word: str = "<DONE!>",
         max_exit_words: int = 2,
-        similarity_ratio_warning_threshold: float = 0.4,
-        similarity_ratio_exit_threshold: float = 0.9
+        similarity_ratio_warning_threshold: float = 0.3,
+        similarity_ratio_exit_threshold: float = 0.6
     ) -> None:
         self.system_prompt = system_prompt
         self.exit_word = exit_word
@@ -104,6 +104,7 @@ class TWOAI:
         self.exit_word_count = exit_word_count
         # Start with the first agent in the agent_details config
         self.current_agent = agent_details[0]
+        self.message_count = 0
         logging.debug(self.conversation_config.system_prompt)
 
     def bot_say(self, msg: str, color: str = Fore.LIGHTGREEN_EX):
@@ -213,6 +214,7 @@ class TWOAI:
 
         self.current_agent = self.get_opposite_ai()
         self.__show_cursor()
+        self.message_count += 1
         return text
 
     def start_conversation(self):
@@ -238,18 +240,27 @@ class TWOAI:
                     if similarity_ratio > self.conversation_config.similarity_ratio_exit_threshold:
                         logging.warning(
                             "Similarity ratio exit threshold exceeded. Terminating conversation.")
+                        logging.info("Number of messages: %s",
+                                     self.message_count)
                         return
                 if self.conversation_config.exit_word in res:
                     self.exit_word_count += 1
                     logging.info("Exit word detected.")
                 if self.exit_word_count == self.conversation_config.max_exit_words:
-                    print(
-                        Fore.RED + "The conversation was concluded..." + Style.RESET_ALL)
-                    logging.info("======= Conversation Concluded =======")
-                    self.__show_cursor()
+                    self.end_conversation()
                     return
         except KeyboardInterrupt:
             print(Fore.RED + "Closing Conversation..." + Style.RESET_ALL)
             logging.info("======= Closing Conversation =======")
+            logging.info("Number of messages: %s", self.message_count)
             self.__show_cursor()
             return
+
+    def end_conversation(self):
+        """ Function to gracefully end the conversation """
+        print(
+            Fore.RED + "The conversation was concluded..." + Style.RESET_ALL)
+        logging.info("======= Conversation Concluded =======")
+        logging.info("Number of messages: %s", self.message_count)
+        self.__show_cursor()
+        return
